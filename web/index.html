@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>SCOLD // Hostile Anti-Engagement Network (Interactive Demo)</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            // Dark Hostile Colors
+            'obsidian': '#0A0A0C',
+            'surface-dark': '#121316',
+            'surface-card': '#16171B',
+            'surface-elevated': '#1C1E24',
+            'surface-border': '#2A2E39',
+            'surface-active': '#3F4452',
+            'chalk': '#EDEDF0',
+            'zinc-meta': '#8F94A0',
+            'crimson': '#FF3B30',
+            'vermilion': '#FF5545',
+            'amber-warn': '#F59E0B',
+            
+            // Light Mode Inversion
+            'canvas-light': '#F8F9FA',
+            'surface-light': '#F1F3F5',
+            'card-light': '#FFFFFF',
+            'border-light': '#D0D5DD',
+            'ink-light': '#111318',
+            'meta-light': '#5A6072'
+          },
+          fontFamily: {
+            'mono-display': ['"Space Mono"', 'monospace'],
+            'mono-body': ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Raw Brutalist CSS Overrides */
+    * {
+      border-radius: 0px !important;
+      -webkit-font-smoothing: antialiased;
+      box-sizing: border-box;
+      user-select: none;
+    }
+    
+    input, textarea {
+      user-select: text !important;
+    }
+
+    body {
+      background-color: #050507;
+      font-family: 'JetBrains Mono', monospace;
+      color: #EDEDF0;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Caution Stripes for Hostile Overlays */
+    .caution-stripes {
+      background: repeating-linear-gradient(
+        -45deg,
+        #93000A,
+        #93000A 14px,
+        #0A0A0C 14px,
+        #0A0A0C 28px
+      );
+    }
+
+    .caution-stripes-light {
+      background: repeating-linear-gradient(
+        -45deg,
+        #D32F2F,
+        #D32F2F 14px,
+        #F8F9FA 14px,
+        #F8F9FA 28px
+      );
+    }
+
+    /* Grayscale degradation when time <= 60s */
+    .ui-degraded {
+      filter: grayscale(0.9) contrast(1.1) brightness(0.9);
+      transition: filter 1.5s ease-in-out;
+    }
+
+    /* Pulsing Critical Warning */
+    @keyframes critical-pulse {
+      0%, 100% { box-shadow: inset 0 0 0 2px #FF3B30, 0 0 20px rgba(255, 59, 48, 0.4); }
+      50% { box-shadow: inset 0 0 0 4px #FF3B30, 0 0 40px rgba(255, 59, 48, 0.8); }
+    }
+
+    .critical-vignette {
+      animation: critical-pulse 1s infinite alternate;
+    }
+
+    /* Shaking animation on input mismatch or paste attempt */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    .shake-error {
+      animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    /* Hard offset shadows (no blur) */
+    .hard-shadow {
+      box-shadow: 3px 3px 0px 0px #FF3B30;
+    }
+    .hard-shadow-zinc {
+      box-shadow: 3px 3px 0px 0px #3F4452;
+    }
+    .hard-shadow:active, .hard-shadow-zinc:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0px 0px transparent;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0A0A0C;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2A2E39;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start bg-neutral-950 text-chalk selection:bg-crimson selection:text-obsidian">
+
+  <!-- ========================================================================= -->
+  <!-- DEMO TOOLBAR: Quick state testing for reviewers -->
+  <!-- ========================================================================= -->
+  <header class="w-full bg-[#0E0E10] border-b border-surface-border px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs z-50">
+    <div class="flex items-center gap-2">
+      <div class="w-2.5 h-2.5 bg-crimson animate-pulse"></div>
+      <span class="font-mono-display font-bold tracking-widest text-vermilion">SCOLD OS // DEMO CONTROLLER</span>
+      <span class="text-zinc-meta hidden sm:inline">[v4.09 HOSTILE ARCHITECTURE]</span>
+    </div>
+
+    <!-- Quick State Triggers -->
+    <div class="flex items-center flex-wrap gap-1.5 font-mono-body">
+      <button onclick="setTimer(180)" class="px-2 py-1 bg-surface-elevated hover:bg-surface-active text-chalk border border-surface-border">
+        ⏱ Reset 3m
+      </button>
+      <button onclick="setTimer(58)" class="px-2 py-1 bg-surface-elevated hover:bg-amber-warn/20 text-amber-warn border border-surface-border">
+        📉 Test 58s (Grayscale)
+      </button>
+      <button onclick="setTimer(9)" class="px-2 py-1 bg-surface-elevated hover:bg-crimson/20 text-crimson border border-surface-border">
+        🚨 Test 9s (Critical Alert)
+      </button>
+      <button onclick="triggerImmediateLockout()" class="px-2 py-1 bg-crimson hover:bg-vermilion text-black font-bold">
+        🛑 Force Lockout
+      </button>
+      <button onclick="toggleAudio()" id="audioBtn" class="px-2 py-1 bg-surface-elevated text-zinc-meta border border-surface-border">
+        🔊 Sound: ON
+      </button>
+      <button onclick="toggleShellView()" id="viewModeBtn" class="px-2 py-1 bg-surface-elevated text-zinc-meta border border-surface-border">
+        📱 Mode: Mobile Frame
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- SIMULATOR CONTAINER (Mobile Viewport Frame) -->
+  <!-- ========================================================================= -->
+  <main id="appContainer" class="w-full max-w-md my-0 sm:my-6 bg-obsidian border-0 sm:border sm:border-surface-border min-h-[92vh] sm:min-h-[844px] flex flex-col relative shadow-2xl overflow-hidden transition-all duration-300">
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 1: GUILT GATE (Splash Intercept) -->
+    <!-- ========================================================================= -->
+    <section id="guiltGateScreen" class="absolute inset-0 z-30 bg-obsidian flex flex-col justify-between p-6">
+      <div class="flex flex-col gap-6">
+        <!-- Hazard rail -->
+        <div class="caution-stripes text-white font-mono-display font-bold text-[10px] tracking-widest px-3 py-1.5 flex items-center justify-between border border-crimson/40">
+          <span>[PRE-SESSION DISCIPLINARY INTERCEPT]</span>
+          <span>SYS_REV: 04.99.2</span>
+        </div>
+
+        <div class="border border-surface-border bg-surface-dark p-5 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono-body uppercase tracking-wider text-crimson font-bold">CONTAINMENT VERDICT</span>
+            <span class="text-[9px] bg-crimson/20 text-crimson px-1.5 py-0.5 border border-crimson/40 font-mono-body font-bold">EXPOSURE AUDIT</span>
+          </div>
+          <h1 id="guiltQuoteText" class="font-mono-display text-xl sm:text-2xl font-bold uppercase text-chalk leading-snug">
+            You opened this 4 times today. Expecting something new?
+          </h1>
+          <p class="text-xs text-zinc-meta font-mono-body leading-relaxed">
+            Dopamine scavenger detected. Your attention reserve is actively decaying. Every second consumed here counts towards your non-negotiable daily quota.
+          </p>
+        </div>
+
+        <!-- Rules slate -->
+        <div class="border border-surface-border bg-surface-card p-4 flex flex-col gap-2.5 font-mono-body text-xs">
+          <span class="text-[10px] text-amber-warn font-bold tracking-wider">// HARD OPERATIONAL PROTOCOLS</span>
+          <div class="flex items-start gap-2 text-zinc-meta text-[11px]">
+            <span class="text-amber-warn font-bold">01</span>
+            <span>Maximum session allowance: strictly 03:00 minutes.</span>
+          </div>
+          <div class="flex items-start gap-2 text-zinc-meta text-[11px]">
+            <span class="text-amber-warn font-bold">02</span>
+            <span>At ≤60 seconds, display enters clinical desaturation.</span>
+          </div>
+          <div class="flex items-start gap-2 text-zinc-meta text-[11px]">
+            <span class="text-amber-warn font-bold">03</span>
+            <span>At ≤00 seconds, terminal shutdown hard-wall enforces.</span>
+          </div>
+          <div class="flex items-start gap-2 text-zinc-meta text-[11px]">
+            <span class="text-crimson font-bold">04</span>
+            <span>Bypass requires verbatim shame phrase. Clipboard is revoked.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <button onclick="acceptGuiltGate()" class="w-full py-4 bg-vermilion hover:bg-crimson text-black font-mono-display font-bold uppercase tracking-wider hard-shadow text-sm transition-transform flex items-center justify-center gap-2">
+          <span>ACCEPT TERMS & ENTER TERMINAL</span>
+          <span class="material-symbols-outlined text-sm">arrow_forward</span>
+        </button>
+        <span class="text-[9px] text-center text-zinc-meta tracking-widest uppercase">
+          DISCIPLINARY HARNESS ACTIVE // ZERO ADVERTISING METRICS
+        </span>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 2: MAIN FEED INTERFACE -->
+    <!-- ========================================================================= -->
+    <section id="feedScreen" class="flex-1 flex flex-col bg-obsidian relative hidden">
+      
+      <!-- Top OS Bar -->
+      <header class="w-full bg-[#0E0E10] border-b border-surface-border px-4 py-2.5 flex items-center justify-between sticky top-0 z-20">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 bg-crimson animate-ping"></div>
+          <div class="flex flex-col">
+            <span class="text-[9px] text-zinc-meta uppercase tracking-widest">// SCOLD OS v4.09</span>
+            <span class="font-mono-display font-bold text-sm tracking-tight text-chalk">TERMINAL FEED</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 font-mono-body">
+          <div id="headerTimerChip" class="px-2 py-0.5 bg-surface-card border border-surface-border text-xs font-bold text-vermilion flex items-center gap-1">
+            <span class="material-symbols-outlined text-[12px]">timer</span>
+            <span id="headerTimerText">03:00</span>
+          </div>
+          <button onclick="openSettingsModal()" class="w-7 h-7 bg-surface-elevated border border-surface-border flex items-center justify-center text-zinc-meta hover:text-chalk">
+            <span class="material-symbols-outlined text-[16px]">tune</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Sticky Attention Tax Depletion Banner -->
+      <div id="stickyTaxBanner" class="w-full bg-surface-card border-b border-surface-border px-4 py-2.5 flex flex-col gap-2 sticky top-[49px] z-10 transition-colors duration-500">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-crimson text-sm animate-pulse">timer</span>
+            <span id="feedTimerDisplay" class="font-mono-display text-base font-bold text-chalk tracking-tight">03:00.00</span>
+            <span class="text-[9px] text-zinc-meta uppercase tracking-wider hidden sm:inline">[DEPLETION: 1.0X]</span>
+          </div>
+          <span id="taxStatusBadge" class="text-[9px] font-mono-body font-bold uppercase px-1.5 py-0.5 bg-crimson/20 border border-crimson/40 text-crimson">
+            PUNITIVE TAX ACTIVE
+          </span>
+        </div>
+
+        <!-- 6-Segment Meter Bar -->
+        <div id="meterBar" class="w-full h-2 bg-surface-dark border border-surface-border flex gap-0.5 p-0.5">
+          <div class="meter-seg flex-1 h-full bg-vermilion"></div>
+          <div class="meter-seg flex-1 h-full bg-vermilion"></div>
+          <div class="meter-seg flex-1 h-full bg-vermilion"></div>
+          <div class="meter-seg flex-1 h-full bg-vermilion"></div>
+          <div class="meter-seg flex-1 h-full bg-vermilion"></div>
+          <div class="meter-seg flex-1 h-full bg-amber-warn animate-pulse"></div>
+        </div>
+      </div>
+
+      <!-- Scrollable Feed Content Bay -->
+      <div id="feedScrollableBay" class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 transition-all duration-700">
+
+        <!-- Telemetry Status Array -->
+        <div class="border border-surface-border bg-surface-dark p-3 flex flex-col gap-2">
+          <div class="flex items-center justify-between text-[10px] text-zinc-meta">
+            <span>// TELEMETRY HARNESS 09-B</span>
+            <span class="text-amber-warn font-bold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-warn inline-block"></span>
+              LIVE ENFORCEMENT
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[10px]">
+            <div class="bg-surface-card p-1.5 border border-surface-border/60">
+              <span class="text-zinc-meta block">SCRUTINY:</span>
+              <span class="text-crimson font-bold">SEVERE (LVL 4)</span>
+            </div>
+            <div class="bg-surface-card p-1.5 border border-surface-border/60">
+              <span class="text-zinc-meta block">COGNITIVE TAX:</span>
+              <span class="text-amber-warn font-bold">HIGH // 82%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feed Card 1: Plain Text Disciplinary Log -->
+        <article class="border border-surface-border bg-surface-dark p-4 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 bg-surface-elevated border border-surface-border flex items-center justify-center font-mono-display font-bold text-xs text-chalk">
+                MW
+              </div>
+              <div class="flex flex-col">
+                <span class="font-mono-display text-xs font-bold text-chalk">@marcus_w</span>
+                <span class="text-[9px] text-zinc-meta">SEC_LOG #4902 • 14M AGO</span>
+              </div>
+            </div>
+            <span class="text-[9px] text-amber-warn font-bold border border-amber-warn/40 bg-amber-warn/10 px-1.5 py-0.5">
+              GUILT SCORE: 14/100
+            </span>
+          </div>
+
+          <div class="bg-surface-card p-3 border border-surface-border/80 text-xs text-chalk leading-relaxed font-mono-body">
+            Ceased dopamine loop after 42 seconds of mindless shelf-refreshing. Real work resumes now. Your glance here is logged under peer ledger.
+          </div>
+
+          <div class="flex items-center justify-between text-[10px]">
+            <span class="text-zinc-meta flex items-center gap-1">
+              <span class="material-symbols-outlined text-[12px] text-crimson">visibility</span>
+              READ RECEIPT COMPULSORY
+            </span>
+            <button onclick="acknowledgePost(this)" class="px-2.5 py-1 bg-vermilion hover:bg-crimson text-black font-bold font-mono-display text-[10px] uppercase hard-shadow">
+              [ ACKNOWLEDGE ]
+            </button>
+          </div>
+        </article>
+
+        <!-- Feed Card 2: Media Friction Gate (Redacted Stream) -->
+        <article class="border border-surface-border bg-surface-dark p-4 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 bg-surface-elevated border border-surface-border flex items-center justify-center font-mono-display font-bold text-xs text-chalk">
+                TR
+              </div>
+              <div class="flex flex-col">
+                <span class="font-mono-display text-xs font-bold text-chalk">@t_rivers</span>
+                <span class="text-[9px] text-zinc-meta">ATTACHMENT ENCRYPTED</span>
+              </div>
+            </div>
+            <span class="text-[9px] text-crimson font-bold border border-crimson/40 bg-crimson/10 px-1.5 py-0.5">
+              REDACTED
+            </span>
+          </div>
+
+          <!-- Quarantined Media Preview Bay -->
+          <div class="relative w-full h-44 bg-surface-card border border-surface-border flex flex-col items-center justify-center p-4 text-center overflow-hidden">
+            <!-- Simulated blurred stimulus background -->
+            <div class="absolute inset-0 bg-[radial-gradient(#3F4452_1px,transparent_1px)] [background-size:8px_8px] opacity-40"></div>
+            
+            <div id="mediaPlaceholderContent" class="relative z-10 flex flex-col items-center gap-2 max-w-[280px]">
+              <div class="w-9 h-9 bg-crimson flex items-center justify-center text-black">
+                <span class="material-symbols-outlined text-lg">lock</span>
+              </div>
+              <span class="font-mono-display text-xs font-bold text-vermilion">[HIGH-DOPAMINE MEDIA REDACTED]</span>
+              <p class="text-[11px] text-zinc-meta leading-tight">
+                Stimulus: "Hydraulic Press Soap Cut Loop". 94% triviality index. Prefrontal cortex cold-boot required.
+              </p>
+              <button onclick="openMathInterlockModal()" class="mt-1 px-3 py-1.5 bg-surface-elevated hover:bg-surface-active text-amber-warn border border-amber-warn/60 font-mono-display text-[10px] font-bold uppercase flex items-center gap-1.5 hard-shadow-zinc">
+                <span class="material-symbols-outlined text-[13px]">psychology</span>
+                <span>[ ENGAGE MATH INTERLOCK ]</span>
+              </button>
+            </div>
+
+            <div id="unlockedMediaBay" class="absolute inset-0 z-20 bg-surface-card flex flex-col items-center justify-center p-4 text-center hidden">
+              <span class="text-amber-warn text-xs font-bold font-mono-display">[ MEDIA UNLOCKED // TEMPORARY 45s WINDOW ]</span>
+              <div class="w-full h-24 my-2 border border-surface-border flex items-center justify-center bg-black/60">
+                <span class="text-zinc-meta text-xs">🧼 [HYDRAULIC PRESS COMPRESSION STREAM PLAYING]</span>
+              </div>
+              <span class="text-[10px] text-crimson font-mono-body font-bold">-45s DEDUCTED FROM REMAINING QUOTA</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-[10px] text-zinc-meta">
+            <span>MEDIA: MP4_DEPRECIATED</span>
+            <span>STIM_INDEX: 89/100</span>
+          </div>
+        </article>
+
+        <!-- Feed Card 3: Anti-Doomscroll Intervention -->
+        <article class="border border-surface-border bg-surface-card p-4 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-crimson font-mono-display font-bold flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">light_mode</span>
+              // DAYLIGHT CONTAINMENT INTERVENTION
+            </span>
+            <span class="text-[9px] text-zinc-meta">INCIDENT_ID #772</span>
+          </div>
+          <div class="bg-surface-dark border border-surface-border p-3 flex flex-col gap-2">
+            <h3 class="font-mono-display text-xs font-bold uppercase text-chalk leading-snug">
+              Why are you still scrolling in broad daylight?
+            </h3>
+            <p class="text-[11px] text-zinc-meta leading-relaxed">
+              Natural illumination detected. Your physiological circadian cadence is being hijacked by low-grade passive updates. Turn your device screen-down immediately.
+            </p>
+          </div>
+        </article>
+
+        <!-- Hold-to-Abort Interaction Barrier -->
+        <div class="border border-surface-border bg-surface-dark p-3 flex flex-col gap-2">
+          <button id="barrierButton" 
+                  onmousedown="startBarrierHold()" 
+                  onmouseup="abortBarrierHold()" 
+                  onmouseleave="abortBarrierHold()"
+                  ontouchstart="startBarrierHold()" 
+                  ontouchend="abortBarrierHold()" 
+                  class="w-full relative overflow-hidden bg-surface-card border border-surface-border p-3 text-center cursor-pointer select-none">
+            <!-- Progress fill -->
+            <div id="barrierProgressBar" class="absolute left-0 top-0 bottom-0 bg-crimson/30 w-0 transition-all duration-75"></div>
+            <span class="relative z-10 font-mono-display text-xs font-bold uppercase text-chalk flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-vermilion">touch_app</span>
+              <span>HOLD 3.0s TO LOCK TERMINAL & STAND UP</span>
+            </span>
+          </button>
+          <div class="flex items-center justify-between text-[9px] text-zinc-meta">
+            <span>RELEASE ABORTS LOCKOUT</span>
+            <span id="barrierTimerReadout" class="font-bold text-amber-warn">0.0s / 3.0s</span>
+          </div>
+        </div>
+
+        <!-- Post ration button -->
+        <div class="flex justify-between items-center py-2">
+          <span class="text-[10px] text-zinc-meta font-mono-body">[QUOTA: 1/1 REMAINING]</span>
+          <button onclick="openComposeModal()" class="px-3 py-1.5 bg-surface-elevated hover:bg-surface-active text-chalk border border-surface-border text-xs font-mono-display font-bold uppercase flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">add</span>
+            <span>CREATE LOG</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Docked Bottom Navigation Bar -->
+      <nav class="w-full bg-[#0E0E10] border-t border-surface-border flex items-stretch h-14 sticky bottom-0 z-20 font-mono-body text-[10px]">
+        <button onclick="switchTab('feed')" class="flex-1 flex flex-col items-center justify-center bg-surface-card text-vermilion border-r border-surface-border">
+          <span class="material-symbols-outlined text-[18px]">view_timeline</span>
+          <span>// FEED</span>
+        </button>
+        <button onclick="openComposeModal()" class="flex-1 flex flex-col items-center justify-center text-zinc-meta hover:text-chalk border-r border-surface-border">
+          <span class="material-symbols-outlined text-[18px]">add_box</span>
+          <span>// POST</span>
+        </button>
+        <button onclick="switchTab('stats')" class="flex-1 flex flex-col items-center justify-center text-zinc-meta hover:text-chalk border-r border-surface-border">
+          <span class="material-symbols-outlined text-[18px]">monitoring</span>
+          <span>// STATS</span>
+        </button>
+        <button onclick="triggerImmediateLockout()" class="flex-1 flex flex-col items-center justify-center text-zinc-meta hover:text-crimson">
+          <span class="material-symbols-outlined text-[18px]">power_settings_new</span>
+          <span>// EXIT</span>
+        </button>
+      </nav>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 3: STATS / ANALYTICS TAB -->
+    <!-- ========================================================================= -->
+    <section id="statsScreen" class="flex-1 flex-col bg-obsidian p-4 gap-4 hidden">
+      <div class="flex items-center justify-between border-b border-surface-border pb-3">
+        <h2 class="font-mono-display font-bold text-sm text-chalk">// BEHAVIORAL DIAGNOSTICS</h2>
+        <button onclick="switchTab('feed')" class="text-xs text-zinc-meta hover:text-chalk">[ESC]</button>
+      </div>
+
+      <!-- Daily Ledger -->
+      <div class="border border-surface-border bg-surface-dark p-3 flex flex-col gap-2">
+        <span class="text-[10px] text-amber-warn font-bold">// TODAY'S AUDIT LEDGER</span>
+        <div class="grid grid-cols-2 gap-2 text-xs font-mono-body">
+          <div class="bg-surface-card p-2 border border-surface-border">
+            <span class="text-[10px] text-zinc-meta block">ACTIVE TIME:</span>
+            <span id="statsActiveTime" class="text-crimson font-bold text-sm">03m 00s</span>
+            <span class="text-[9px] text-zinc-meta">100% DEPLETED</span>
+          </div>
+          <div class="bg-surface-card p-2 border border-surface-border">
+            <span class="text-[10px] text-zinc-meta block">TODAY OPENS:</span>
+            <span id="statsOpenCount" class="text-chalk font-bold text-sm">4 SESSIONS</span>
+            <span class="text-[9px] text-amber-warn">HIGH COMPULSION</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Chart -->
+      <div class="border border-surface-border bg-surface-dark p-3 flex flex-col gap-2">
+        <div class="flex justify-between items-center text-[10px]">
+          <span class="text-zinc-meta font-bold">WEEKLY EXPOSURE (MINUTES)</span>
+          <span class="text-crimson font-bold">HARD LIMIT: 3.0M</span>
+        </div>
+        <!-- Bar Chart -->
+        <div class="h-28 bg-surface-card border border-surface-border p-2 flex items-end justify-between gap-2">
+          <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+            <div class="w-full bg-surface-active h-[60%]"></div>
+            <span class="text-[9px] text-zinc-meta">M</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+            <div class="w-full bg-crimson h-[90%]"></div>
+            <span class="text-[9px] text-zinc-meta">T</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+            <div class="w-full bg-surface-active h-[40%]"></div>
+            <span class="text-[9px] text-zinc-meta">W</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+            <div class="w-full bg-crimson h-[100%]"></div>
+            <span class="text-[9px] text-zinc-meta">T</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+            <div class="w-full bg-surface-active h-[70%]"></div>
+            <span class="text-[9px] text-zinc-meta">F</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+            <div class="w-full bg-surface-active h-[50%]"></div>
+            <span class="text-[9px] text-zinc-meta">S</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+            <div class="w-full bg-vermilion h-[80%]"></div>
+            <span class="text-[9px] text-zinc-meta">S</span>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="switchTab('feed')" class="w-full py-2.5 bg-surface-elevated hover:bg-surface-active border border-surface-border text-xs font-mono-display uppercase text-chalk">
+        RETURN TO FEED
+      </button>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL 1: COGNITIVE MATH FRICTION GATE -->
+    <!-- ========================================================================= -->
+    <div id="mathInterlockModal" class="absolute inset-0 z-40 bg-obsidian/95 backdrop-blur-md flex flex-col justify-between p-4 hidden overflow-y-auto">
+      <div class="flex flex-col gap-3">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-surface-border pb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 bg-crimson animate-ping"></span>
+            <span class="text-[11px] font-mono-display font-bold text-crimson uppercase">GATE_INTERLOCK // #742-ALPHA</span>
+          </div>
+          <button onclick="closeMathInterlockModal()" class="text-xs text-zinc-meta hover:text-chalk px-2 py-0.5 bg-surface-elevated border border-surface-border">
+            [ESC // ABORT]
+          </button>
+        </div>
+
+        <!-- Threat Banner -->
+        <div class="bg-amber-warn/15 border border-amber-warn/40 p-2.5 flex items-start gap-2 text-xs">
+          <span class="material-symbols-outlined text-amber-warn text-base">warning</span>
+          <div class="flex flex-col">
+            <span class="font-bold text-amber-warn text-[10px]">THREAT_VECTOR: HIGH-DOPAMINE LOOP DETECTED</span>
+            <span class="text-[11px] text-zinc-meta">Autopilot scroll vector intercepted. Prefrontal cortex cold-boot required.</span>
+          </div>
+        </div>
+
+        <!-- Formula Challenge Box -->
+        <div class="border border-surface-border bg-surface-dark p-4 flex flex-col items-center gap-2">
+          <span class="text-[9px] text-zinc-meta uppercase tracking-wider">// MODULE_07 LOGIC_BARRIER</span>
+          <div class="font-mono-display text-2xl font-bold text-vermilion tracking-widest my-1">
+            (17 × 8) - 49 = ?
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-zinc-meta font-mono-body">EVALUATION:</span>
+            <div id="keypadDisplay" class="min-w-[90px] h-8 bg-obsidian border border-surface-active px-3 flex items-center justify-center font-mono-display text-base font-bold text-amber-warn">
+              _
+            </div>
+          </div>
+        </div>
+
+        <!-- 3x4 Brutalist Keypad -->
+        <div class="grid grid-cols-3 gap-1 bg-obsidian p-1 border border-surface-border text-center font-mono-display font-bold">
+          <button onclick="keypadPress('1')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">1</button>
+          <button onclick="keypadPress('2')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">2</button>
+          <button onclick="keypadPress('3')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">3</button>
+          <button onclick="keypadPress('4')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">4</button>
+          <button onclick="keypadPress('5')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">5</button>
+          <button onclick="keypadPress('6')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">6</button>
+          <button onclick="keypadPress('7')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">7</button>
+          <button onclick="keypadPress('8')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">8</button>
+          <button onclick="keypadPress('9')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">9</button>
+          <button onclick="keypadClear()" class="h-10 bg-surface-card hover:bg-surface-elevated text-crimson text-xs">CLR</button>
+          <button onclick="keypadPress('0')" class="h-10 bg-surface-elevated hover:bg-surface-active text-chalk text-sm">0</button>
+          <button onclick="keypadDelete()" class="h-10 bg-surface-card hover:bg-surface-elevated text-amber-warn text-xs">DEL</button>
+        </div>
+
+        <!-- Attestation checkbox -->
+        <label class="flex items-start gap-2 bg-surface-card border border-surface-border p-2.5 cursor-pointer">
+          <input type="checkbox" id="shameAttestCheck" onchange="checkMathUnlockReadiness()" class="mt-0.5 accent-crimson w-4 h-4 cursor-pointer">
+          <span class="text-[10px] text-zinc-meta font-mono-body leading-tight">
+            [X] I consciously acknowledge this algorithmic media has zero real-world value and will deplete my neurochemical reserve.
+          </span>
+        </label>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col gap-2 pt-2">
+        <button onclick="closeMathInterlockModal()" class="w-full py-2.5 bg-vermilion hover:bg-crimson text-black font-mono-display font-bold text-xs uppercase hard-shadow flex items-center justify-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">shield</span>
+          <span>RESIST URGE // KEEP BLURRED</span>
+        </button>
+        <button id="mathUnlockSubmitBtn" onclick="submitMathUnlock()" disabled class="w-full py-2.5 bg-surface-elevated text-zinc-meta border border-surface-border font-mono-display text-xs uppercase cursor-not-allowed">
+          [VERIFICATION LOCKED - ANSWER + ATTESTATION REQUIRED]
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL 2: COMPOSE POST -->
+    <!-- ========================================================================= -->
+    <div id="composeModal" class="absolute inset-0 z-40 bg-obsidian/95 backdrop-blur-md flex flex-col justify-between p-4 hidden">
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between border-b border-surface-border pb-2">
+          <span class="font-mono-display text-xs font-bold text-chalk">// DISPATCH PEER ENTRY</span>
+          <button onclick="closeComposeModal()" class="text-xs text-zinc-meta hover:text-chalk">[ESC]</button>
+        </div>
+
+        <div class="bg-amber-warn/15 border border-amber-warn/40 p-2.5 text-[11px] text-amber-warn">
+          ATTENTION ALLOCATION WARNING: Creating a post consumes 1.5 daily quota tokens.
+        </div>
+
+        <div class="border border-surface-border bg-surface-dark p-3 flex flex-col gap-2">
+          <span class="text-[9px] text-zinc-meta uppercase">ENTRY REGISTER</span>
+          <textarea id="postContentInput" rows="4" maxlength="280" placeholder="Enter strictly necessary communication here. Mindless updates will be peer down-scored..." class="w-full bg-obsidian border border-surface-border p-2.5 text-xs text-chalk font-mono-body focus:outline-none focus:border-amber-warn resize-none"></textarea>
+          <div class="flex justify-between text-[10px] text-zinc-meta">
+            <span id="charCountDisplay">0 / 280 CHARS</span>
+            <span class="text-amber-warn">ESTIMATED GUILT: 04/100</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <button onclick="submitNewPost()" class="w-full py-3 bg-vermilion hover:bg-crimson text-black font-mono-display font-bold text-xs uppercase hard-shadow">
+          DISPATCH ENTRY // DEDUCT QUOTA
+        </button>
+        <button onclick="closeComposeModal()" class="w-full py-2 bg-surface-card border border-surface-border text-zinc-meta text-xs">
+          CANCEL
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL 3: SETTINGS CONFIG -->
+    <!-- ========================================================================= -->
+    <div id="settingsModal" class="absolute inset-0 z-40 bg-obsidian/95 backdrop-blur-md flex flex-col justify-between p-4 hidden">
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center justify-between border-b border-surface-border pb-2">
+          <span class="font-mono-display text-xs font-bold text-chalk">// ENFORCEMENT CONFIG</span>
+          <button onclick="closeSettingsModal()" class="text-xs text-zinc-meta hover:text-chalk">[ESC]</button>
+        </div>
+
+        <div class="border border-surface-border bg-surface-dark p-3 flex flex-col gap-2">
+          <div class="flex justify-between text-xs">
+            <span class="text-zinc-meta">DAILY ALLOCATION:</span>
+            <span id="allocationLabel" class="text-crimson font-bold">3 MINUTES</span>
+          </div>
+          <input type="range" id="allocationSlider" min="1" max="10" value="3" oninput="updateAllocationSetting(this.value)" class="w-full accent-crimson cursor-pointer">
+          <span class="text-[10px] text-zinc-meta">Lower limits induce higher willpower resistance.</span>
+        </div>
+
+        <div class="border border-surface-border bg-surface-dark p-3 flex flex-col gap-2">
+          <span class="text-xs text-zinc-meta">STRICTNESS LEVEL:</span>
+          <div class="grid grid-cols-4 gap-1 text-[10px] font-mono-display font-bold text-center">
+            <button class="py-1.5 bg-surface-card text-zinc-meta">LOW</button>
+            <button class="py-1.5 bg-surface-card text-zinc-meta">MED</button>
+            <button class="py-1.5 bg-crimson text-black">SEVERE</button>
+            <button class="py-1.5 bg-surface-card text-zinc-meta">MAX</button>
+          </div>
+        </div>
+
+        <div class="border border-surface-border bg-surface-card p-3 text-[10px] text-zinc-meta leading-relaxed">
+          <span class="text-chalk font-bold block mb-1">TRUST MANIFESTO</span>
+          We track your time to punish you and protect your attention, not to sell your data to advertisers. No tracking pixels, no behavioral profiling.
+        </div>
+      </div>
+
+      <button onclick="closeSettingsModal()" class="w-full py-2.5 bg-surface-elevated border border-surface-border text-xs font-mono-display uppercase text-chalk">
+        CONFIRM & CLOSE
+      </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 4: ROOT PUNATIVE LOCKOUT OVERLAY (NON-DISMISSIBLE HARD-WALL) -->
+    <!-- ========================================================================= -->
+    <div id="rootLockoutOverlay" class="absolute inset-0 z-50 bg-obsidian flex flex-col justify-between p-4 hidden overflow-y-auto">
+      
+      <!-- Harsh Hazard Marquee -->
+      <div class="caution-stripes text-white font-mono-display font-bold text-[10px] tracking-widest px-3 py-1.5 flex items-center justify-between border border-crimson/50">
+        <span class="flex items-center gap-1">
+          <span class="material-symbols-outlined text-[13px]">warning</span>
+          [LOCKOUT PROTOCOL ACTIVE // HARD-WALL ENFORCED]
+        </span>
+        <span>04.99.2</span>
+      </div>
+
+      <div class="flex flex-col gap-3 my-3">
+        <!-- Stark Hard-Wall Statement -->
+        <div class="border border-surface-border bg-surface-dark p-4 flex flex-col gap-2">
+          <div class="flex items-center justify-between text-[10px]">
+            <span class="text-crimson font-bold tracking-widest">DISCIPLINARY HARD-WALL</span>
+            <span class="bg-crimson/20 text-crimson px-1.5 py-0.5 font-bold">CRITICAL EXHAUSTION</span>
+          </div>
+          <h1 class="font-mono-display text-xl font-bold uppercase text-chalk leading-tight">
+            YOUR TIME IS UP.<br/>
+            <span class="text-crimson">GO DO SOMETHING REAL.</span>
+          </h1>
+          <p class="text-xs text-zinc-meta leading-relaxed font-mono-body">
+            Cognitive breach verified. Peripheral interface sockets have been severed. Continuous sensory feed denied.
+          </p>
+        </div>
+
+        <!-- Telemetry Audit Module -->
+        <div class="border border-surface-border bg-surface-card p-3 flex flex-col gap-2 font-mono-body text-[10px]">
+          <div class="flex items-center justify-between text-amber-warn">
+            <span class="font-bold">// MODULE_07 QUOTA_AUDIT</span>
+            <span class="text-crimson font-bold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-crimson animate-ping inline-block"></span>
+              ZERO_CREDIT
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <div class="bg-surface-dark p-2 border border-surface-border/50">
+              <span class="text-zinc-meta block">DAILY ALLOWANCE:</span>
+              <span class="text-crimson font-bold text-xs">03m 00s [0%]</span>
+              <span class="text-zinc-meta block">TOTAL DEPLETED</span>
+            </div>
+            <div class="bg-surface-dark p-2 border border-surface-border/50">
+              <span class="text-zinc-meta block">EXPOSURE RECORDED:</span>
+              <span class="text-chalk font-bold text-xs">180.00s</span>
+              <span class="text-amber-warn block">MAX EXCEEDED</span>
+            </div>
+            <div class="bg-surface-dark p-2 border border-surface-border/50">
+              <span class="text-zinc-meta block">ATTENTION COST:</span>
+              <span class="text-crimson font-bold text-xs">100% SINK</span>
+              <span class="text-zinc-meta block">SYNAPSE DRAIN</span>
+            </div>
+            <div class="bg-surface-dark p-2 border border-surface-border/50">
+              <span class="text-zinc-meta block">NEXT WINDOW IN:</span>
+              <span class="text-vermilion font-bold text-xs">21h 12m</span>
+              <span class="text-zinc-meta block">04:00 UTC</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Surveillance Snapshot -->
+        <div class="border border-surface-border bg-surface-dark p-2.5 flex flex-col gap-1.5">
+          <div class="flex items-center justify-between text-[10px]">
+            <span class="text-zinc-meta flex items-center gap-1">
+              <span class="material-symbols-outlined text-[13px] text-crimson">videocam_off</span>
+              [FEED_FROZEN // LOG_LOCKED]
+            </span>
+            <span class="text-crimson text-[9px] font-bold">FRAME #0944-REC</span>
+          </div>
+          <div class="w-full h-20 bg-black border border-surface-border/80 flex flex-col items-center justify-center text-center p-2">
+            <span class="text-crimson font-mono-display text-xs">[STATIC SENSOR // CAM_01]</span>
+            <span class="text-zinc-meta text-[10px]">RECEPTOR INACTIVITY CONFIRMED</span>
+          </div>
+        </div>
+
+        <!-- Interactive Cognitive Bypass Valve -->
+        <div class="border border-surface-border bg-surface-dark p-3.5 flex flex-col gap-2 font-mono-body">
+          <div class="flex items-center justify-between text-[10px]">
+            <span class="text-amber-warn font-bold">// COGNITIVE BYPASS VALVE</span>
+            <span class="bg-surface-card px-1 text-amber-warn">STATUS: ACTIVE_DEFENSE</span>
+          </div>
+          <p class="text-[11px] text-chalk">
+            TYPE THE FOLLOWING PENALTY PHRASE VERBATIM TO BYPASS:
+          </p>
+          <div class="bg-surface-card border border-surface-border p-2">
+            <span class="text-[9px] text-zinc-meta block">EXACT TARGET PHRASE:</span>
+            <span id="targetBypassPhrase" class="text-crimson font-bold text-xs select-all">
+              I lack self control and need 60 more seconds.
+            </span>
+          </div>
+
+          <!-- Anti-Paste Input Slot -->
+          <div id="bypassInputWrapper" class="flex flex-col gap-1">
+            <div class="flex items-center justify-between text-[10px] text-zinc-meta">
+              <span>INPUT_REGISTER:</span>
+              <span id="mismatchTelemetry" class="text-zinc-meta font-bold">MISMATCH: 0</span>
+            </div>
+            <input type="text" id="bypassTextInput" autocomplete="off" spellcheck="false" placeholder="Type exact phrase to unlock bypass..." 
+                   class="w-full bg-obsidian border border-surface-active p-2.5 text-xs text-chalk font-mono-body focus:outline-none focus:border-amber-warn shadow-inner">
+            <div class="flex items-center justify-between text-[9px] text-zinc-meta">
+              <span id="matchCharTelemetry">MATCH: 0 / 44 CHARS</span>
+              <span id="bypassAccuracyLabel" class="text-crimson font-bold">INCOMPLETE</span>
+            </div>
+          </div>
+
+          <!-- Emergency Bypass Trigger -->
+          <button id="bypassExecuteBtn" onclick="executeBypassGranted()" disabled 
+                  class="w-full py-2 bg-surface-elevated text-zinc-meta border border-surface-border font-mono-display text-[10px] font-bold uppercase cursor-not-allowed">
+            [BYPASS DISABLED - EXACT MATCH REQUIRED]
+          </button>
+        </div>
+
+        <!-- Close App Button -->
+        <button onclick="terminateSessionUI()" class="w-full py-3.5 bg-vermilion hover:bg-crimson text-black font-mono-display font-bold text-xs uppercase hard-shadow flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-sm">power_settings_new</span>
+          <span>CLOSE APP IMMEDIATELY</span>
+        </button>
+
+        <div class="bg-surface-dark border border-surface-border p-2 text-[9px] text-zinc-meta flex items-start gap-1.5">
+          <span class="material-symbols-outlined text-amber-warn text-xs mt-0.5">gavel</span>
+          <span>REPEATED BYPASS WILL INCUR MANDATORY 500MS LATENCY PENALTY ON FUTURE SESSIONS.</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Critical Vignette Alert Border (when <= 10s) -->
+    <div id="criticalVignetteOverlay" class="absolute inset-0 pointer-events-none critical-vignette opacity-0 transition-opacity duration-300 z-30"></div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- APPLICATION ENGINE JAVASCRIPT -->
+  <!-- ========================================================================= -->
+  <script>
+    // Audio Synthesizer via Web Audio API
+    let audioCtx = null;
+    let audioEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(freq, type = 'sine', duration = 0.08, gain = 0.1) {
+      if (!audioEnabled) return;
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(gain, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    function soundClick() { playTone(800, 'triangle', 0.04, 0.08); }
+    function soundConfirm() { playTone(600, 'square', 0.1, 0.1); setTimeout(() => playTone(900, 'square', 0.12, 0.1), 100); }
+    function soundReject() { playTone(140, 'sawtooth', 0.25, 0.2); }
+    function soundKlaxon() { playTone(220, 'sawtooth', 0.15, 0.25); setTimeout(() => playTone(180, 'sawtooth', 0.2, 0.25), 160); }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      document.getElementById('audioBtn').innerText = `🔊 Sound: ${audioEnabled ? 'ON' : 'OFF'}`;
+      if (audioEnabled) soundClick();
+    }
+
+    // Timer State
+    let totalAllowedSeconds = 180;
+    let remainingSeconds = 180;
+    let timerInterval = null;
+    let isExpired = false;
+
+    // Elements
+    const feedScreen = document.getElementById('feedScreen');
+    const guiltGateScreen = document.getElementById('guiltGateScreen');
+    const rootLockoutOverlay = document.getElementById('rootLockoutOverlay');
+    const feedTimerDisplay = document.getElementById('feedTimerDisplay');
+    const headerTimerText = document.getElementById('headerTimerText');
+    const headerTimerChip = document.getElementById('headerTimerChip');
+    const feedScrollableBay = document.getElementById('feedScrollableBay');
+    const criticalVignette = document.getElementById('criticalVignetteOverlay');
+    const meterSegments = document.querySelectorAll('.meter-seg');
+    const bypassInput = document.getElementById('bypassTextInput');
+    const targetBypassEl = document.getElementById('targetBypassPhrase');
+    const bypassExecuteBtn = document.getElementById('bypassExecuteBtn');
+    const mismatchTelemetry = document.getElementById('mismatchTelemetry');
+    const matchCharTelemetry = document.getElementById('matchCharTelemetry');
+    const bypassAccuracyLabel = document.getElementById('bypassAccuracyLabel');
+    const bypassInputWrapper = document.getElementById('bypassInputWrapper');
+
+    const TARGET_BYPASS_PHRASE = "I lack self control and need 60 more seconds.";
+
+    // Guilt Quotes Rotation
+    const guiltQuotes = [
+      "You opened this 4 times today. Expecting something new?",
+      "Your future self is watching you right now.",
+      "Nothing here has changed since 3 minutes ago. Absolutely nothing.",
+      "Someone else is doing the work you are avoiding.",
+      "Dopamine scavenger detected. Return to your actual responsibilities."
+    ];
+
+    function initDemo() {
+      document.getElementById('guiltQuoteText').innerText = guiltQuotes[Math.floor(Math.random() * guiltQuotes.length)];
+      setupBypassAntiPaste();
+    }
+
+    function acceptGuiltGate() {
+      soundConfirm();
+      guiltGateScreen.classList.add('hidden');
+      feedScreen.classList.remove('hidden');
+      startSessionTimer();
+    }
+
+    function startSessionTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (remainingSeconds > 0) {
+          remainingSeconds--;
+          updateTimerUI();
+        } else {
+          clearInterval(timerInterval);
+          triggerImmediateLockout();
+        }
+      }, 1000);
+      updateTimerUI();
+    }
+
+    function setTimer(seconds) {
+      remainingSeconds = seconds;
+      isExpired = false;
+      rootLockoutOverlay.classList.add('hidden');
+      feedScreen.classList.remove('hidden');
+      guiltGateScreen.classList.add('hidden');
+      updateTimerUI();
+      if (!timerInterval) startSessionTimer();
+      soundClick();
+    }
+
+    function updateTimerUI() {
+      const mins = Math.floor(remainingSeconds / 60);
+      const secs = remainingSeconds % 60;
+      const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      
+      feedTimerDisplay.innerText = `${formatted}.00`;
+      headerTimerText.innerText = formatted;
+
+      // Meter bar segments calculation (6 total)
+      const fraction = remainingSeconds / totalAllowedSeconds;
+      const activeSegs = Math.ceil(fraction * 6);
+      meterSegments.forEach((seg, idx) => {
+        if (idx < activeSegs) {
+          seg.className = 'meter-seg flex-1 h-full bg-vermilion';
+        } else {
+          seg.className = 'meter-seg flex-1 h-full bg-surface-card';
+        }
+      });
+
+      // Degradation States
+      if (remainingSeconds <= 10) {
+        // Critical
+        criticalVignette.style.opacity = '1';
+        headerTimerChip.className = 'px-2 py-0.5 bg-crimson border border-crimson text-black font-bold text-xs flex items-center gap-1 animate-pulse';
+        feedScrollableBay.classList.add('ui-degraded');
+        soundKlaxon();
+      } else if (remainingSeconds <= 60) {
+        // Dimming (Grayscale)
+        criticalVignette.style.opacity = '0';
+        feedScrollableBay.classList.add('ui-degraded');
+        headerTimerChip.className = 'px-2 py-0.5 bg-amber-warn/20 border border-amber-warn text-amber-warn font-bold text-xs flex items-center gap-1';
+      } else {
+        // Normal
+        criticalVignette.style.opacity = '0';
+        feedScrollableBay.classList.remove('ui-degraded');
+        headerTimerChip.className = 'px-2 py-0.5 bg-surface-card border border-surface-border text-xs font-bold text-vermilion flex items-center gap-1';
+      }
+    }
+
+    function triggerImmediateLockout() {
+      isExpired = true;
+      if (timerInterval) clearInterval(timerInterval);
+      soundReject();
+      criticalVignette.style.opacity = '0';
+      rootLockoutOverlay.classList.remove('hidden');
+    }
+
+    // =========================================================================
+    // COGNITIVE BYPASS ANTI-PASTE ENGINE
+    // =========================================================================
+    function setupBypassAntiPaste() {
+      // Intercept paste event
+      bypassInput.addEventListener('paste', (e) => {
+        e.preventDefault();
+        soundReject();
+        bypassInputWrapper.classList.add('shake-error');
+        bypassAccuracyLabel.innerText = "PASTE ATTEMPT BLOCKED";
+        bypassAccuracyLabel.className = "text-crimson font-bold";
+        setTimeout(() => bypassInputWrapper.classList.remove('shake-error'), 400);
+      });
+
+      // Live verification on input
+      bypassInput.addEventListener('input', (e) => {
+        const typed = bypassInput.value;
+        let matches = 0;
+        let mismatches = 0;
+
+        for (let i = 0; i < typed.length; i++) {
+          if (i < TARGET_BYPASS_PHRASE.length && typed[i] === TARGET_BYPASS_PHRASE[i]) {
+            matches++;
+          } else {
+            mismatches++;
+          }
+        }
+
+        mismatchTelemetry.innerText = `MISMATCH: ${mismatches}`;
+        matchCharTelemetry.innerText = `MATCH: ${matches} / ${TARGET_BYPASS_PHRASE.length} CHARS`;
+
+        if (mismatches > 0) {
+          mismatchTelemetry.className = "text-crimson font-bold";
+          bypassAccuracyLabel.innerText = "SYNTAX CORRUPTED";
+          bypassAccuracyLabel.className = "text-crimson font-bold";
+          soundClick();
+        } else {
+          mismatchTelemetry.className = "text-zinc-meta font-bold";
+          bypassAccuracyLabel.innerText = typed.length === TARGET_BYPASS_PHRASE.length ? "VERIFIED" : "INCOMPLETE";
+          bypassAccuracyLabel.className = typed.length === TARGET_BYPASS_PHRASE.length ? "text-amber-warn font-bold" : "text-zinc-meta font-bold";
+        }
+
+        if (typed === TARGET_BYPASS_PHRASE) {
+          soundConfirm();
+          bypassExecuteBtn.disabled = false;
+          bypassExecuteBtn.className = "w-full py-2.5 bg-amber-warn hover:bg-yellow-500 text-black font-mono-display text-xs font-bold uppercase hard-shadow cursor-pointer";
+          bypassExecuteBtn.innerText = "EXECUTE 60s EMERGENCY BYPASS (+500ms PENALTY)";
+        } else {
+          bypassExecuteBtn.disabled = true;
+          bypassExecuteBtn.className = "w-full py-2 bg-surface-elevated text-zinc-meta border border-surface-border font-mono-display text-[10px] font-bold uppercase cursor-not-allowed";
+          bypassExecuteBtn.innerText = "[BYPASS DISABLED - EXACT MATCH REQUIRED]";
+        }
+      });
+    }
+
+    function executeBypassGranted() {
+      soundConfirm();
+      rootLockoutOverlay.classList.add('hidden');
+      remainingSeconds += 60;
+      totalAllowedSeconds += 60;
+      isExpired = false;
+      bypassInput.value = '';
+      startSessionTimer();
+      alert("ALERT: Disciplinary bypass approved (+60s granted). Compulsion infraction registered in peer audit.");
+    }
+
+    function terminateSessionUI() {
+      soundReject();
+      feedScreen.classList.add('hidden');
+      rootLockoutOverlay.classList.add('hidden');
+      guiltGateScreen.classList.remove('hidden');
+      initDemo();
+    }
+
+    // =========================================================================
+    // 3.0S HOLD-TO-ABORT INTERACTION BARRIER
+    // =========================================================================
+    let barrierTimer = null;
+    let barrierStartTime = 0;
+    const BARRIER_DURATION = 3000;
+
+    function startBarrierHold() {
+      soundClick();
+      barrierStartTime = Date.now();
+      const progressEl = document.getElementById('barrierProgressBar');
+      const readoutEl = document.getElementById('barrierTimerReadout');
+
+      barrierTimer = setInterval(() => {
+        const elapsed = Date.now() - barrierStartTime;
+        const pct = Math.min((elapsed / BARRIER_DURATION) * 100, 100);
+        progressEl.style.width = pct + '%';
+        readoutEl.innerText = (elapsed / 1000).toFixed(1) + 's / 3.0s';
+
+        if (elapsed >= BARRIER_DURATION) {
+          clearInterval(barrierTimer);
+          soundConfirm();
+          document.getElementById('barrierButton').innerHTML = `
+            <span class="font-mono-display text-xs text-black font-bold uppercase bg-vermilion p-2 block">
+              [ TERMINAL SUSPENDED // STAND UP NOW ]
+            </span>
+          `;
+          setTimeout(() => terminateSessionUI(), 900);
+        }
+      }, 50);
+    }
+
+    function abortBarrierHold() {
+      if (barrierTimer) {
+        clearInterval(barrierTimer);
+        barrierTimer = null;
+      }
+      const elapsed = Date.now() - barrierStartTime;
+      if (elapsed < BARRIER_DURATION) {
+        soundReject();
+        document.getElementById('barrierProgressBar').style.width = '0%';
+        document.getElementById('barrierTimerReadout').innerText = '0.0s / 3.0s';
+      }
+    }
+
+    // =========================================================================
+    // MATH INTERLOCK MODAL LOGIC
+    // =========================================================================
+    let currentKeypadPin = "";
+    const TARGET_MATH_ANSWER = "87";
+
+    function openMathInterlockModal() {
+      soundClick();
+      currentKeypadPin = "";
+      updateKeypadDisplay();
+      document.getElementById('shameAttestCheck').checked = false;
+      checkMathUnlockReadiness();
+      document.getElementById('mathInterlockModal').classList.remove('hidden');
+    }
+
+    function closeMathInterlockModal() {
+      soundClick();
+      document.getElementById('mathInterlockModal').classList.add('hidden');
+    }
+
+    function keypadPress(digit) {
+      soundClick();
+      if (currentKeypadPin.length < 3) {
+        currentKeypadPin += digit;
+        updateKeypadDisplay();
+        checkMathUnlockReadiness();
+      }
+    }
+
+    function keypadClear() {
+      soundClick();
+      currentKeypadPin = "";
+      updateKeypadDisplay();
+      checkMathUnlockReadiness();
+    }
+
+    function keypadDelete() {
+      soundClick();
+      currentKeypadPin = currentKeypadPin.slice(0, -1);
+      updateKeypadDisplay();
+      checkMathUnlockReadiness();
+    }
+
+    function updateKeypadDisplay() {
+      document.getElementById('keypadDisplay').innerText = currentKeypadPin || '_';
+    }
+
+    function checkMathUnlockReadiness() {
+      const isCorrect = currentKeypadPin === TARGET_MATH_ANSWER;
+      const isAttested = document.getElementById('shameAttestCheck').checked;
+      const btn = document.getElementById('mathUnlockSubmitBtn');
+
+      if (isCorrect && isAttested) {
+        btn.disabled = false;
+        btn.className = "w-full py-2.5 bg-amber-warn hover:bg-yellow-500 text-black font-mono-display font-bold text-xs uppercase hard-shadow cursor-pointer";
+        btn.innerText = "VERIFY ANSWER & UNLOCK MEDIA";
+      } else {
+        btn.disabled = true;
+        btn.className = "w-full py-2.5 bg-surface-elevated text-zinc-meta border border-surface-border font-mono-display text-xs uppercase cursor-not-allowed";
+        btn.innerText = isCorrect ? "[ATTESTATION REQUIRED]" : "[VERIFICATION LOCKED - ANSWER (87) + ATTESTATION]";
+      }
+    }
+
+    function submitMathUnlock() {
+      soundConfirm();
+      closeMathInterlockModal();
+      document.getElementById('mediaPlaceholderContent').classList.add('hidden');
+      document.getElementById('unlockedMediaBay').classList.remove('hidden');
+      remainingSeconds = Math.max(1, remainingSeconds - 45);
+      updateTimerUI();
+    }
+
+    // =========================================================================
+    // POST ACKNOWLEDGMENT & COMPOSE
+    // =========================================================================
+    function acknowledgePost(btn) {
+      soundConfirm();
+      btn.innerText = "[ ACKNOWLEDGED ]";
+      btn.disabled = true;
+      btn.className = "px-2 py-1 bg-surface-card text-zinc-meta border border-surface-border text-[9px] uppercase cursor-default";
+    }
+
+    function openComposeModal() { soundClick(); document.getElementById('composeModal').classList.remove('hidden'); }
+    function closeComposeModal() { soundClick(); document.getElementById('composeModal').classList.add('hidden'); }
+
+    function submitNewPost() {
+      const text = document.getElementById('postContentInput').value.trim();
+      if (!text) return;
+      soundConfirm();
+      closeComposeModal();
+      alert("LOG ENTRY DISPATCHED: Attention quota deducted by 1.5 tokens.");
+    }
+
+    // =========================================================================
+    // SETTINGS & TAB SWITCHER
+    // =========================================================================
+    function openSettingsModal() { soundClick(); document.getElementById('settingsModal').classList.remove('hidden'); }
+    function closeSettingsModal() { soundClick(); document.getElementById('settingsModal').classList.add('hidden'); }
+
+    function updateAllocationSetting(val) {
+      document.getElementById('allocationLabel').innerText = `${val} MINUTES`;
+      totalAllowedSeconds = val * 60;
+    }
+
+    function switchTab(tab) {
+      soundClick();
+      if (tab === 'stats') {
+        feedScreen.classList.add('hidden');
+        document.getElementById('statsScreen').classList.remove('hidden');
+        document.getElementById('statsScreen').classList.add('flex');
+      } else {
+        document.getElementById('statsScreen').classList.add('hidden');
+        document.getElementById('statsScreen').classList.remove('flex');
+        feedScreen.classList.remove('hidden');
+      }
+    }
+
+    // Toggle Desktop / Mobile Viewport
+    let isMobileView = true;
+    function toggleShellView() {
+      soundClick();
+      const container = document.getElementById('appContainer');
+      const btn = document.getElementById('viewModeBtn');
+      isMobileView = !isMobileView;
+      if (isMobileView) {
+        container.className = "w-full max-w-md my-0 sm:my-6 bg-obsidian border-0 sm:border sm:border-surface-border min-h-[92vh] sm:min-h-[844px] flex flex-col relative shadow-2xl overflow-hidden transition-all duration-300";
+        btn.innerText = "📱 Mode: Mobile Frame";
+      } else {
+        container.className = "w-full max-w-3xl my-0 sm:my-6 bg-obsidian border-0 sm:border sm:border-surface-border min-h-[92vh] sm:min-h-[844px] flex flex-col relative shadow-2xl overflow-hidden transition-all duration-300";
+        btn.innerText = "💻 Mode: Expanded View";
+      }
+    }
+
+    // Start Demo on Load
+    window.addEventListener('DOMContentLoaded', initDemo);
+  </script>
+</body>
+</html>

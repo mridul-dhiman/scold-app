@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SCOLD</string>
+    <string name="notification_channel_timer">Session Timer</string>
+    <string name="notification_channel_timer_desc">Active session timer enforcement</string>
+</resources>
